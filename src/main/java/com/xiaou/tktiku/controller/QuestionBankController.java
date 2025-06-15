@@ -1,5 +1,6 @@
 package com.xiaou.tktiku.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xiaou.tktiku.entity.QuestionBank;
 import com.xiaou.tktiku.service.QuestionBankService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,35 +9,32 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/question-banks")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/question-banks")
 public class QuestionBankController {
 
     @Autowired
     private QuestionBankService questionBankService;
 
     @GetMapping
-    public List<QuestionBank> list() {
+    public List<QuestionBank> getAllBanks() {
         return questionBankService.list();
     }
 
-    @GetMapping("/{id}")
-    public QuestionBank getById(@PathVariable Long id) {
-        return questionBankService.getById(id);
-    }
-
     @PostMapping
-    public boolean save(@RequestBody QuestionBank questionBank) {
-        return questionBankService.save(questionBank);
+    public QuestionBank createBank(@RequestBody QuestionBank questionBank) {
+        questionBankService.save(questionBank);
+        return questionBank;
     }
 
-    @PutMapping
-    public boolean update(@RequestBody QuestionBank questionBank) {
-        return questionBankService.updateById(questionBank);
+    @PutMapping("/{id}")
+    public QuestionBank updateBank(@PathVariable Long id, @RequestBody QuestionBank questionBank) {
+        questionBank.setId(id);
+        questionBankService.updateById(questionBank);
+        return questionBank;
     }
 
     @DeleteMapping("/{id}")
-    public boolean delete(@PathVariable Long id) {
-        return questionBankService.removeById(id);
+    public void deleteBank(@PathVariable Long id) {
+        questionBankService.removeById(id);
     }
 }

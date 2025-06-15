@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>题库管理系统</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+    <div class="header">
+        <h1>题库管理系统</h1>
+    </div>
+
+    <div class="nav">
+        <ul>
+            <li><a th:href="@{/admin}">题库管理</a></li>
+            <li><a th:href="@{/admin/questions}">题目管理</a></li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <div class="content">
+            <h2>题库列表</h2>
+            <button class="btn" onclick="showAddBankForm()">添加题库</button>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>名称</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="bankList">
+                    <!-- 题库列表将通过JavaScript动态加载 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 添加题库表单 -->
+        <div id="addBankForm" class="content" style="display: none;">
+            <h2>添加题库</h2>
+            <form id="bankForm">
+                <div class="form-group">
+                    <label for="bankName">题库名称：</label>
+                    <input type="text" id="bankName" name="name" required>
+                </div>
+                <button type="submit" class="btn">保存</button>
+                <button type="button" class="btn" onclick="hideAddBankForm()">取消</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 加载题库列表
+        async function loadBanks() {
+            try {
+                const response = await fetch('/api/question-banks');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                const banks = Array.isArray(data) ? data : [];
+                const bankList = document.getElementById('bankList');
+                bankList.innerHTML = banks.map(bank => `
+                    <tr>
+                        <td>${bank.id}</td>
+                        <td>${bank.name}</td>
+                        <td class="actions">
+                            <button class="btn btn-view" onclick="viewBank(${bank.id})">查看</button>
+                            <button class="btn btn-edit" onclick="editBank(${bank.id})">编辑</button>
+                            <button class="btn btn-delete" onclick="deleteBank(${bank.id})">删除</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('加载题库失败:', error);
+                alert('加载题库失败');
+            }
+        }
+
+        // 显示添加题库表单
+        function showAddBankForm() {
+            document.getElementById('addBankForm').style.display = 'block';
+        }
+
+        // 隐藏添加题库表单
+        function hideAddBankForm() {
+            document.getElementById('addBankForm').style.display = 'none';
+            document.getElementById('bankForm').reset();
+        }
+
+        // 添加题库
+        document.getElementById('bankForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('bankName').value;
+            try {
+                const response = await fetch('/api/question-banks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name }),
+                });
+                if (response.ok) {
+                    hideAddBankForm();
+                    loadBanks();
+                    alert('添加题库成功');
+                } else {
+                    alert('添加题库失败');
+                }
+            } catch (error) {
+                console.error('添加题库失败:', error);
+                alert('添加题库失败');
+            }
+        });
+
+        // 删除题库
+        async function deleteBank(id) {
+            if (!confirm('确定要删除这个题库吗？')) return;
+            try {
+                const response = await fetch(`/api/question-banks/${id}`, {
+                    method: 'DELETE',
+                });
+                if (response.ok) {
+                    loadBanks();
+                    alert('删除题库成功');
+                } else {
+                    alert('删除题库失败');
+                }
+            } catch (error) {
+                console.error('删除题库失败:', error);
+                alert('删除题库失败');
+            }
+        }
+
+        // 编辑题库
+        async function editBank(id) {
+            const name = prompt('请输入新的题库名称：');
+            if (!name) return;
+            try {
+                const response = await fetch(`/api/question-banks/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name }),
+                });
+                if (response.ok) {
+                    loadBanks();
+                    alert('更新题库成功');
+                } else {
+                    alert('更新题库失败');
+                }
+            } catch (error) {
+                console.error('更新题库失败:', error);
+                alert('更新题库失败');
+            }
+        }
+
+        // 查看题库详情
+        function viewBank(id) {
+            window.location.href = `/admin/questions?bankId=${id}`;
+        }
+
+        // 页面加载时获取题库列表
+        document.addEventListener('DOMContentLoaded', loadBanks);
+    </script>
+</body>
+
+</html>
